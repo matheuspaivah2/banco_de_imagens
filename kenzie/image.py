@@ -1,9 +1,8 @@
-
 from flask import Flask, flash, request, redirect, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
-from environs import Env
 import os
 import zipfile
+from environs import Env
 
 env = Env()
 env.read_env()
@@ -11,12 +10,10 @@ env.read_env()
 UPLOAD_FOLDER = './uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.secret_key = 'bcimages'
 
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+def create_upload_folder():
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
 
 
 def allowed_file(filename):
@@ -24,16 +21,10 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@app.route("/upload", methods=["POST"])
-def upload():    
 
-    if 'file' not in request.files:
-            flash('No file part')
-            return 'No file part'
-    
-    
-    file = request.files["file"]
-    request.files['file'].save('/tmp/foo')
+def upload_file(file, app):    
+
+    file.save('/tmp/foo')
     size = os.path.getsize('/tmp/foo') / (1024 * 1024)
     
     if size >= 1:
@@ -61,10 +52,7 @@ def upload():
         return 'Type file not allowed', 415
             
 
-        
-    
 
-@app.route("/files", methods=["GET"])
 def show_all_files():   
 
     output = []
@@ -78,7 +66,6 @@ def show_all_files():
 
 
 
-@app.route("/files/<string:type_file>", methods=["GET"])
 def show_filtered_files(type_file):   
     
     output = []
@@ -95,8 +82,7 @@ def show_filtered_files(type_file):
 
 
 
-@app.route("/download/<string:file_name>")
-def download_file(file_name):
+def download_file_url(file_name):
     try:
         return send_from_directory(directory="../uploads", path=f'{file_name}', as_attachment=True)
     except TypeError:
@@ -115,7 +101,7 @@ def compression(rate):
         return zipfile.ZIP_LZMA
 
 
-@app.route("/download-zip")
+
 def download_zip():
 
     file_type = request.args.get("file_type")
